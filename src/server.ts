@@ -26,10 +26,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 async function autoMigrate() {
   console.log('[migrate] Running auto-migration...');
 
-  // ONE-TIME FIX: Drop old zkverify schema and recreate clean
-  await query(`DROP SCHEMA public CASCADE; CREATE SCHEMA public; CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
-
-  // All CREATE TABLE statements use IF NOT EXISTS for safety
+  await query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
 
   await query(`
     CREATE TABLE IF NOT EXISTS users (
