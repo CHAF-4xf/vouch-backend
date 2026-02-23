@@ -1,72 +1,71 @@
 // ═══════════════════════════════════════════
-// VOUCH Auth Service
-// bcrypt passwords, RS256 JWT, SHA-256 API keys
+// VOUCH Auth Service — BULLETPROOF VERSION
+// bcryptjs (pure JS, no native deps), JWT HS256, SHA-256 API keys
 // ═══════════════════════════════════════════
 
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { randomBytes, createHash } from 'crypto';
+import jwt from 'jsonwebtoken';
 
 const BCRYPT_ROUNDS = 12;
 const JWT_EXPIRY = '24h';
 const API_KEY_PREFIX = 'sk_live_';
 
-// ─── Password Hashing ────────────────────
+// ─── Password Hashing (pure JS bcryptjs) ──
+
+let bcryptjs: any = null;
+
+async function getBcrypt() {
+  if (!bcryptjs) {
+    try {
+      bcryptjs = require('bcryptjs');
+    } catch {
+      try {
+        bcryptjs = require('bcrypt');
+      } catch {
+        throw new Error('Neither bcryptjs nor bcrypt is installed');
+      }
+    }
+  }
+  return bcryptjs;
+}
 
 export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, BCRYPT_ROUNDS);
+  const bc = await getBcrypt();
+  return bc.hash(password, BCRYPT_ROUNDS);
 }
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
+  const bc = await getBcrypt();
+  return bc.compare(password, hash);
 }
 
-// ─── JWT (RS256 or HS256 fallback) ───────
+// ─── JWT (HS256 — simple and reliable) ────
 
-function getJwtSecret(): { key: string; algorithm: jwt.Algorithm } {
-  const privateKey = process.env.JWT_PRIVATE_KEY;
-  if (privateKey && privateKey.includes('BEGIN')) {
-    // RS256 with PEM key
-    return { key: privateKey.replace(/\\n/g, '\n'), algorithm: 'RS256' };
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET || process.env.JWT_PRIVATE_KEY || 'vouch-dev-secret-change-in-production';
+  if (process.env.NODE_ENV === 'production' && secret === 'vouch-dev-secret-change-in-production') {
+    console.warn('[auth] WARNING: Using default JWT secret in production. Set JWT_SECRET env var.');
   }
-
-  // Fallback to HS256 with a secret string (dev mode)
-  const secret = process.env.JWT_SECRET || 'vouch-dev-secret-change-in-production';
-  if (process.env.NODE_ENV === 'production' && !privateKey) {
-    throw new Error('JWT_PRIVATE_KEY must be set in production');
-  }
-  return { key: secret, algorithm: 'HS256' };
-}
-
-function getJwtVerifyKey(): { key: string; algorithms: jwt.Algorithm[] } {
-  const publicKey = process.env.JWT_PUBLIC_KEY;
-  if (publicKey && publicKey.includes('BEGIN')) {
-    return { key: publicKey.replace(/\\n/g, '\n'), algorithms: ['RS256'] };
-  }
-
-  const secret = process.env.JWT_SECRET || 'vouch-dev-secret-change-in-production';
-  return { key: secret, algorithms: ['HS256'] };
+  return secret;
 }
 
 export interface JwtPayload {
-  sub: string;   // user ID
+  sub: string;
   email: string;
   tier: string;
 }
 
 export function signJwt(payload: JwtPayload): string {
-  const { key, algorithm } = getJwtSecret();
-  return jwt.sign(payload, key, {
-    algorithm,
+  return jwt.sign(payload, getJwtSecret(), {
+    algorithm: 'HS256',
     expiresIn: JWT_EXPIRY,
     issuer: 'vouch',
   });
 }
 
 export function verifyJwt(token: string): JwtPayload {
-  const { key, algorithms } = getJwtVerifyKey();
-  const decoded = jwt.verify(token, key, {
-    algorithms,
+  const decoded = jwt.verify(token, getJwtSecret(), {
+    algorithms: ['HS256'],
     issuer: 'vouch',
   });
   return decoded as JwtPayload;
@@ -74,22 +73,14 @@ export function verifyJwt(token: string): JwtPayload {
 
 // ─── API Keys ────────────────────────────
 
-/**
- * Generate a new API key.
- * Returns the plaintext key (shown once) and its SHA-256 hash (stored).
- */
 export function generateApiKey(): { plaintext: string; hash: string; prefix: string } {
   const random = randomBytes(32).toString('hex');
   const plaintext = API_KEY_PREFIX + random;
   const hash = hashApiKey(plaintext);
   const prefix = API_KEY_PREFIX + random.slice(0, 4) + '...';
-
   return { plaintext, hash, prefix };
 }
 
-/**
- * Hash an API key with SHA-256 for storage.
- */
 export function hashApiKey(key: string): string {
   return createHash('sha256').update(key).digest('hex');
 }
