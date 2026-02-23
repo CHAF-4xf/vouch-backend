@@ -3,7 +3,7 @@
 // bcrypt passwords, RS256 JWT, SHA-256 API keys
 // ═══════════════════════════════════════════
 
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomBytes, createHash } from 'crypto';
 
