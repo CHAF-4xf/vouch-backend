@@ -15,16 +15,16 @@ const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
 // Tier to Stripe price mapping
 const STRIPE_PRICE_MAP: Record<string, string> = {
-  pro: process.env.STRIPE_PRICE_PRO || '',
+  starter: process.env.STRIPE_PRICE_STARTER || '',
   growth: process.env.STRIPE_PRICE_GROWTH || '',
   enterprise: process.env.STRIPE_PRICE_ENTERPRISE || '',
 };
 
 // Tier metadata
 const TIER_CONFIG: Record<string, { limit: number }> = {
-  pro: { limit: 100 },
-  growth: { limit: 500 },
-  enterprise: { limit: 5000 },
+  starter: { limit: 1000 },
+  growth: { limit: 10000 },
+  enterprise: { limit: 100000 },
 };
 
 // ─── Create Checkout Session ────────────

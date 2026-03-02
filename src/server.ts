@@ -44,6 +44,8 @@ async function autoMigrate() {
     )
   `);
 
+  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT`);
+
   await query(`
     CREATE TABLE IF NOT EXISTS agents (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -166,6 +168,7 @@ async function start() {
       ...(process.env.NODE_ENV !== 'production' ? { transport: { target: 'pino-pretty' } } : {}),
     },
     trustProxy: true,
+    rawBody: true,
   });
 
   // ─── Auto-Migrate on Startup ────────────
