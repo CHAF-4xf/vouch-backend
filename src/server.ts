@@ -168,7 +168,6 @@ async function start() {
       ...(process.env.NODE_ENV !== 'production' ? { transport: { target: 'pino-pretty' } } : {}),
     },
     trustProxy: true,
-    rawBody: true,
   });
 
   // ─── Auto-Migrate on Startup ────────────
@@ -206,9 +205,25 @@ async function start() {
     },
   });
 
+  // ─── Content-Type Parser for Raw Body ───
+
+  app.addContentTypeParser('application/json', 
+    { parseAs: 'string' }, 
+    (req, body, done) => {
+      (req as any).rawBody = body;
+      try {
+        done(null, JSON.parse(body as string));
+      } catch (e) {
+        done(null, body);
+      }
+    }
+  );
+
   // ─── Error Handler ───────────────────────
 
-  app.setErrorHandler(errorHandler);
+  app.setErrorHandler((error, req, reply) => {
+    errorHandler(error, req, reply);
+  });
 
   // ─── Health Check ────────────────────────
 

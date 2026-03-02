@@ -50,14 +50,7 @@ export default async function billingRoutes(app: FastifyInstance) {
   // ─── POST /api/billing/webhook ────────
   // Handle Stripe webhook events
   // Public route (no auth), raw body required for signature verification
-  app.post('/api/billing/webhook', {
-    onRequest: async (req: FastifyRequest, reply: FastifyReply) => {
-      // Fastify needs raw body for Stripe signature verification
-      // This is typically handled by a bodyParser plugin, but for webhooks
-      // we need to access the raw buffer
-      req.rawBody = await req.getRawBody?.() || Buffer.alloc(0);
-    },
-  }, async (req: FastifyRequest, reply: FastifyReply) => {
+  app.post('/api/billing/webhook', async (req: FastifyRequest, reply: FastifyReply) => {
     try {
       const signature = req.headers['stripe-signature'] as string;
       if (!signature) {
@@ -75,7 +68,7 @@ export default async function billingRoutes(app: FastifyInstance) {
     } catch (err: any) {
       console.error('[billing] POST /webhook error:', err.message);
       return reply.code(400).send({
-        error: err.message || 'Webhook processing failed',
+        error: err.message,
         code: 'WEBHOOK_ERROR',
       });
     }
