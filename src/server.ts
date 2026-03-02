@@ -16,6 +16,7 @@ import authRoutes from './routes/auth';
 import proveRoutes from './routes/prove';
 import agentRoutes from './routes/agents';
 import dashboardRoutes from './routes/dashboard';
+import billingRoutes from './routes/billing';
 
 const PORT = parseInt(process.env.PORT || '3000');
 const HOST = process.env.HOST || '0.0.0.0';
@@ -226,6 +227,7 @@ async function start() {
   await app.register(proveRoutes);
   await app.register(agentRoutes);
   await app.register(dashboardRoutes);
+  await app.register(billingRoutes);
 
   // ─── Load Crypto Keys ────────────────────
 

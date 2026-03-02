@@ -125,6 +125,27 @@ export default async function dashboardRoutes(app: FastifyInstance) {
     });
   });
 
+  // ─── GET /api/dashboard/recent ────────
+  app.get('/api/dashboard/recent', { preHandler: [requireApiKey] }, async (req, reply) => {
+    const user = (req as any).user;
+
+    const proofs = await query(
+      `SELECT p.id, p.created_at as timestamp, p.rule_met as decision,
+              p.proof_hash as signature, p.on_chain_tx_hash as status
+       FROM proofs p
+       JOIN agents a ON p.agent_id = a.id
+       WHERE a.user_id = $1
+       ORDER BY p.created_at DESC
+       LIMIT 10`,
+      [user.id]
+    );
+
+    return reply.code(200).send({
+      recent_proofs: proofs,
+      count: proofs.length,
+    });
+  });
+
   // ─── GET /api/pricing/estimate ─────────
   app.get('/api/pricing/estimate', async (req, reply) => {
     const parsed = PricingEstimateSchema.safeParse(req.query);
