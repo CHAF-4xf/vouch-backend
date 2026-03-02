@@ -23,7 +23,7 @@ export default async function billingRoutes(app: FastifyInstance) {
         });
       }
 
-      const validTiers = ['pro', 'growth', 'enterprise'];
+      const validTiers = ['starter', 'growth', 'enterprise'];
       if (!validTiers.includes(body.tier)) {
         return reply.code(400).send({
           error: `Invalid tier. Must be one of: ${validTiers.join(', ')}`,

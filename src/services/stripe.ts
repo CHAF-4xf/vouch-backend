@@ -34,7 +34,7 @@ const TIER_CONFIG: Record<string, { limit: number }> = {
 
 // ─── Create Checkout Session ────────────
 
-export async function createCheckoutSession(userId: string, tier: 'pro' | 'growth' | 'enterprise') {
+export async function createCheckoutSession(userId: string, tier: 'starter' | 'growth' | 'enterprise') {
   if (!stripe) {
     throw new Error('Stripe client not initialized');
   }
@@ -193,7 +193,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     const priceId = subscription.items.data[0].price.id;
 
     // Find matching tier
-    let tier = 'pro';
+    let tier = 'starter';
     for (const [tierName, priceId_] of Object.entries(STRIPE_PRICE_MAP)) {
       if (priceId_ === priceId) {
         tier = tierName;
