@@ -245,7 +245,13 @@ async function start() {
   await app.register(proveRoutes);
   await app.register(agentRoutes);
   await app.register(dashboardRoutes);
-  await app.register(billingRoutes);
+
+  try {
+    await app.register(billingRoutes);
+    console.log('[server] Billing routes registered');
+  } catch (err: any) {
+    console.error('[server] FAILED to register billing routes:', err.message);
+  }
 
   // ─── Load Crypto Keys ────────────────────
 

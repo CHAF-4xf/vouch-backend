@@ -7,7 +7,14 @@ import Stripe from 'stripe';
 import { query, queryOne, transaction } from '../db';
 
 // Initialize Stripe client
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+let stripe: Stripe | null = null;
+
+try {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+  console.log('[stripe] Stripe client initialized successfully');
+} catch (err: any) {
+  console.error('[stripe] FAILED to initialize Stripe:', err.message);
+}
 
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
@@ -28,6 +35,10 @@ const TIER_CONFIG: Record<string, { limit: number }> = {
 // ─── Create Checkout Session ────────────
 
 export async function createCheckoutSession(userId: string, tier: 'pro' | 'growth' | 'enterprise') {
+  if (!stripe) {
+    throw new Error('Stripe client not initialized');
+  }
+
   if (!STRIPE_PRICE_MAP[tier]) {
     throw new Error(`Invalid tier: ${tier}`);
   }
@@ -89,6 +100,10 @@ export async function createCheckoutSession(userId: string, tier: 'pro' | 'growt
 // ─── Handle Webhook Events ─────────────────
 
 export async function handleWebhookEvent(signature: string, rawBody: string) {
+  if (!stripe) {
+    throw new Error('Stripe client not initialized');
+  }
+
   let event: Stripe.Event;
 
   try {
@@ -237,6 +252,10 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
 // ─── Get Billing Portal Link ─────────────
 
 export async function getBillingPortalLink(userId: string) {
+  if (!stripe) {
+    throw new Error('Stripe client not initialized');
+  }
+
   const user = await queryOne<{ stripe_customer_id: string }>(
     `SELECT stripe_customer_id FROM users WHERE id = $1`,
     [userId]
