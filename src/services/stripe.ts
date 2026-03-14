@@ -25,6 +25,8 @@ const STRIPE_PRICE_MAP: Record<string, string> = {
   enterprise: process.env.STRIPE_PRICE_ENTERPRISE || '',
 };
 
+console.log('[stripe] PRICE_MAP values:', { starter: STRIPE_PRICE_MAP.starter ? 'SET' : 'EMPTY', growth: STRIPE_PRICE_MAP.growth ? 'SET' : 'EMPTY', enterprise: STRIPE_PRICE_MAP.enterprise ? 'SET' : 'EMPTY' });
+
 // Tier metadata
 const TIER_CONFIG: Record<string, { limit: number }> = {
   starter: { limit: 1000 },
